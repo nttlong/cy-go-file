@@ -1,0 +1,4 @@
+github.com/EagleChen/mapmutex v0.0.0-20200716162114-c133e97096b7 h1:j2GDDlu8K8crT7Neb1IhS51iKuh+B4GRBxbGQqCBPkg=
+github.com/EagleChen/mapmutex v0.0.0-20200716162114-c133e97096b7/go.mod h1:H87WPRkM4YDLkW5tC6biLEzWaKtNse5xL1AR91FXC74=
+github.com/hashicorp/golang-lru/v2 v2.0.7 h1:a+bsQ5rvGLjzHuww6tVxozPZFVghXaHOwFs4luLUK2k=
+github.com/hashicorp/golang-lru/v2 v2.0.7/go.mod h1:QeFd9opnmA6QUJc5vARoKUSoFhyfM2/ZepoAG6RGpeM=

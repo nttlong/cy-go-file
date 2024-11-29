@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"sync"
 )
 
 type FileCryptor struct {
@@ -12,44 +13,31 @@ type FileCryptor struct {
 	FileSize int64 // Use int64 for large file sizes
 }
 
-func parallelBitwiseNot(buffer []byte) {
-	// Divide the buffer into chunks
-	cpu_num := runtime.NumCPU()
-	bufferLen := len(buffer)
-	chunkSize := bufferLen / cpu_num
-	chunkLen := len(buffer) / chunkSize
-	if bufferLen%cpu_num != 0 {
-		chunkLen++
-	}
-	chunks := make([][]byte, chunkLen)
-	for i := 0; i < chunkLen; i++ {
-		start := i * chunkSize
-		end := (i + 1) * chunkSize
-		if i == chunkLen-1 {
-			end = len(buffer)
-		}
-		chunks[i] = buffer[start:end]
+func invertBufferParallel(buffer []byte) {
+	numWorkers := runtime.NumCPU()                           // Get the number of CPU cores
+	chunkSize := (len(buffer) + numWorkers - 1) / numWorkers // Calculate chunk size, rounding up
 
-	}
+	var wg sync.WaitGroup
+	wg.Add(numWorkers)
 
-	// Create a channel to receive processed chunks
-	ch := make(chan []byte, len(chunks))
-
-	// Start goroutines to process chunks in parallel
-	for _, chunk := range chunks {
-		go func(chunk []byte) {
-			for i := range chunk {
-				chunk[i] = ^chunk[i]
+	for i := 0; i < numWorkers; i++ {
+		go func(i int) {
+			defer wg.Done()
+			// Calculate start and end indices for this worker's chunk
+			start := i * chunkSize
+			end := start + chunkSize
+			if end > len(buffer) {
+				end = len(buffer)
 			}
-			ch <- chunk
-		}(chunk)
+
+			// Process and invert bits in the chunk
+			for j := start; j < end; j++ {
+				buffer[j] = ^buffer[j]
+			}
+		}(i)
 	}
 
-	// Merge the processed chunks back into the original buffer
-	for i := 0; i < len(chunks); i++ {
-		chunk := <-ch
-		copy(buffer[i*chunkSize:], chunk)
-	}
+	wg.Wait()
 }
 func (f *FileCryptor) GetCryptorInfo() (map[string]interface{}, error) {
 	// Open the file
@@ -94,8 +82,9 @@ func (f *FileCryptor) GetCryptorInfo() (map[string]interface{}, error) {
 	// if err != nil {
 	// 	return nil, fmt.Errorf("error unmarshalling JSON: %w", err)
 	// }
-	parallelBitwiseNot(buffer)
+
 	// Convert decrypted data to JSON
+	invertBufferParallel(buffer)
 	var dict map[string]interface{}
 	//buufer nao is holding text like
 	// "{\"chunk_size\": 2097152, \"rotate\": 6, \"file-size\": 914630377, \"encondex\": 139702, \"wrap-size\": 6547}ndex\": 139702, \"wrap-size\": 6547}"

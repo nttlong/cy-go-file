@@ -2,7 +2,9 @@ package main
 
 import (
 	file_cryptor "cy-py-go-files/file_cryptor"
+	"encoding/json"
 	"fmt"
+	"os"
 	"sync"
 	"time"
 )
@@ -34,17 +36,36 @@ func fsGetCryptorInfo(wg *sync.WaitGroup, threadID string) (map[string]interface
 	return info, nil
 }
 func main() {
-
-	var wg sync.WaitGroup
-
-	// Adjust numWorkers based on your desired parallelism and resource constraints
-	numWorkers := 5
-
-	for i := 0; i < numWorkers; i++ {
-		threadID := fmt.Sprintf("thread-%d", i)
-		wg.Add(1)
-		go fsGetCryptorInfo(&wg, threadID)
+	file_test := "\\\\192.168.18.36\\disk1\\data.mp4-version-1"
+	file_test = "C:\\source\\go-src\\cy-go-file\\data-test\\untitled.png"
+	fs := file_cryptor.FileCryptor{
+		FileName: file_test,
+	}
+	info, err := fs.GetCryptorInfo()
+	if err != nil {
+		fmt.Println(err)
+		return
 	}
 
-	wg.Wait() // Wait for all goroutines to finish before exiting
+	// conver to json text pretty format
+	json_text, err := json.MarshalIndent(info, "", "  ")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(string(json_text))
+	println(fs.GetCryptorInfo())
+	reader, err := fs.OpenRead()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(reader)
+	content := make([]byte, reader.FileSize)
+	reader.Read(content)
+	// write content to file by using os.WriteFile()
+	file_write_test := "C:\\source\\go-src\\cy-go-file\\data-test\avatar-logo-decrypt.png"
+	os.Create(file_write_test)
+	os.WriteFile(file_write_test, content, 0644)
+
 }
